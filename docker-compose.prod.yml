@@ -1,0 +1,25 @@
+services:
+  backend:
+    command: uvicorn app.main:app --host 0.0.0.0 --port 8000 --workers 2
+    volumes:
+      - uploads:/app/uploads
+    ports: []
+    networks:
+      - default
+      - caddy_net
+
+  db:
+    ports: []
+
+  frontend:
+    container_name: plants_frontend
+    ports: []
+    networks:
+      - default
+      - caddy_net
+
+networks:
+  caddy_net:
+    external: true
+
+volumes: {}

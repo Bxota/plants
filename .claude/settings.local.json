@@ -1,0 +1,13 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(python3 -c \"import bcrypt; print\\(bcrypt.hashpw\\(''ton_mdp''.encode\\(\\), bcrypt.gensalt\\(\\)\\).decode\\(\\)\\)\")",
+      "Bash(python3 -c \"import subprocess; result = subprocess.run\\([''openssl'', ''passwd'', ''-6'', ''ton_mdp''], capture_output=True, text=True\\); print\\(result.stdout.strip\\(\\)\\)\")",
+      "Bash(pip3 install bcrypt --quiet)",
+      "Bash(pip3 install --user bcrypt --quiet)",
+      "Bash(python3 -m venv /tmp/venv_bcrypt)",
+      "Bash(/tmp/venv_bcrypt/bin/pip install bcrypt --quiet)",
+      "Bash(/tmp/venv_bcrypt/bin/python -c \"import bcrypt; print\\(bcrypt.hashpw\\(''ton_mdp''.encode\\(\\), bcrypt.gensalt\\(\\)\\).decode\\(\\)\\)\")"
+    ]
+  }
+}

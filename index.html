@@ -1,0 +1,380 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Mes Plantes</title>
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;1,400&family=DM+Mono:wght@300;400&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --cream: #f5f0e8;
+      --dark: #1a1a14;
+      --green-deep: #2d4a2d;
+      --green-mid: #4a7c59;
+      --green-light: #8ab89a;
+      --green-pale: #c8dfc8;
+      --ochre: #c4923a;
+      --rust: #a05c2c;
+      --sand: #e8d9b8;
+    }
+
+    body {
+      background-color: var(--cream);
+      color: var(--dark);
+      font-family: 'DM Mono', monospace;
+      min-height: 100vh;
+      overflow-x: hidden;
+    }
+
+    /* Grain texture overlay */
+    body::before {
+      content: '';
+      position: fixed;
+      inset: 0;
+      background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.03'/%3E%3C/svg%3E");
+      pointer-events: none;
+      z-index: 1000;
+      opacity: 0.4;
+    }
+
+    header {
+      padding: 80px 60px 40px;
+      border-bottom: 1px solid var(--green-light);
+      display: flex;
+      align-items: flex-end;
+      justify-content: space-between;
+      gap: 40px;
+      flex-wrap: wrap;
+      animation: fadeUp 0.9s ease both;
+    }
+
+    .header-left {}
+
+    .label {
+      font-size: 10px;
+      letter-spacing: 0.25em;
+      text-transform: uppercase;
+      color: var(--green-mid);
+      margin-bottom: 12px;
+    }
+
+    h1 {
+      font-family: 'Playfair Display', serif;
+      font-size: clamp(48px, 7vw, 96px);
+      line-height: 0.9;
+      color: var(--green-deep);
+      font-weight: 400;
+    }
+
+    h1 em {
+      font-style: italic;
+      color: var(--ochre);
+    }
+
+    .header-meta {
+      text-align: right;
+      font-size: 11px;
+      color: var(--green-mid);
+      line-height: 2;
+    }
+
+    /* Plant grid */
+    .plants-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(340px, 1fr));
+      gap: 0;
+      padding: 0;
+    }
+
+    .plant-card {
+      border-right: 1px solid var(--green-light);
+      border-bottom: 1px solid var(--green-light);
+      padding: 52px 48px;
+      position: relative;
+      overflow: hidden;
+      transition: background 0.4s ease;
+      animation: fadeUp 0.8s ease both;
+    }
+    .plant-card:nth-child(1) { animation-delay: 0.15s; }
+    .plant-card:nth-child(2) { animation-delay: 0.3s; }
+    .plant-card:nth-child(3) { animation-delay: 0.45s; }
+
+    .plant-card::before {
+      content: '';
+      position: absolute;
+      bottom: -60px;
+      right: -60px;
+      width: 200px;
+      height: 200px;
+      border-radius: 50%;
+      background: var(--card-accent, var(--green-pale));
+      opacity: 0.25;
+      transition: transform 0.5s ease, opacity 0.5s ease;
+    }
+    .plant-card:hover::before {
+      transform: scale(1.4);
+      opacity: 0.4;
+    }
+    .plant-card:hover {
+      background: var(--card-bg, rgba(200,223,200,0.12));
+    }
+
+    /* Card 1 – Coffea */
+    .card-coffea { --card-accent: #8ab89a; --card-bg: rgba(138,184,154,0.08); }
+    /* Card 2 – Calathea */
+    .card-calathea { --card-accent: #c8dfc8; --card-bg: rgba(200,223,200,0.1); border-right: none; }
+    /* Card 3 – Strelitzia */
+    .card-strelitzia { --card-accent: #c4923a; --card-bg: rgba(196,146,58,0.07); border-right: none; }
+
+    .card-number {
+      font-size: 11px;
+      letter-spacing: 0.2em;
+      color: var(--green-light);
+      margin-bottom: 28px;
+    }
+
+    .plant-icon {
+      font-size: 52px;
+      margin-bottom: 20px;
+      display: block;
+      filter: drop-shadow(0 4px 8px rgba(0,0,0,0.1));
+      transition: transform 0.3s ease;
+    }
+    .plant-card:hover .plant-icon {
+      transform: rotate(-5deg) scale(1.1);
+    }
+
+    .plant-common {
+      font-family: 'Playfair Display', serif;
+      font-size: 28px;
+      font-weight: 400;
+      color: var(--green-deep);
+      margin-bottom: 4px;
+      line-height: 1.2;
+    }
+
+    .plant-scientific {
+      font-size: 12px;
+      font-style: italic;
+      color: var(--ochre);
+      margin-bottom: 28px;
+      font-family: 'Playfair Display', serif;
+    }
+
+    .divider {
+      width: 40px;
+      height: 1px;
+      background: var(--green-light);
+      margin-bottom: 28px;
+    }
+
+    .care-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 16px 24px;
+      margin-bottom: 28px;
+    }
+
+    .care-item {}
+    .care-label {
+      font-size: 9px;
+      letter-spacing: 0.2em;
+      text-transform: uppercase;
+      color: var(--green-mid);
+      margin-bottom: 4px;
+    }
+    .care-value {
+      font-size: 12px;
+      color: var(--dark);
+      line-height: 1.5;
+    }
+
+    .plant-note {
+      font-size: 11px;
+      color: var(--green-mid);
+      line-height: 1.7;
+      border-left: 2px solid var(--green-pale);
+      padding-left: 14px;
+      font-style: italic;
+    }
+
+    /* Tags */
+    .tags {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-top: 24px;
+    }
+    .tag {
+      font-size: 9px;
+      letter-spacing: 0.15em;
+      text-transform: uppercase;
+      padding: 5px 12px;
+      border: 1px solid var(--green-light);
+      color: var(--green-mid);
+      border-radius: 100px;
+    }
+
+    /* Footer */
+    footer {
+      padding: 40px 60px;
+      border-top: 1px solid var(--green-light);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 10px;
+      color: var(--green-light);
+      letter-spacing: 0.15em;
+      flex-wrap: wrap;
+      gap: 16px;
+      animation: fadeUp 0.8s 0.6s ease both;
+    }
+
+    .footer-count {
+      font-family: 'Playfair Display', serif;
+      font-size: 36px;
+      color: var(--green-deep);
+      font-style: italic;
+    }
+
+    @keyframes fadeUp {
+      from { opacity: 0; transform: translateY(24px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+
+    @media (max-width: 720px) {
+      header { padding: 48px 32px 32px; }
+      .plant-card { padding: 40px 32px; border-right: none; }
+      footer { padding: 32px; }
+    }
+  </style>
+</head>
+<body>
+
+  <header>
+    <div class="header-left">
+      <p class="label">Herbier personnel</p>
+      <h1>Mes<br><em>Plantes</em></h1>
+    </div>
+    <div class="header-meta">
+      <p>3 espèces recensées</p>
+      <p>Mise à jour · 2026</p>
+    </div>
+  </header>
+
+  <div class="plants-grid">
+
+    <!-- COFFEA ARABICA -->
+    <div class="plant-card card-coffea">
+      <p class="card-number">01 —</p>
+      <span class="plant-icon">☕</span>
+      <h2 class="plant-common">Caféier</h2>
+      <p class="plant-scientific">Coffea arabica</p>
+      <div class="divider"></div>
+      <div class="care-grid">
+        <div class="care-item">
+          <p class="care-label">💧 Arrosage</p>
+          <p class="care-value">Douche abondante, tous les 15 jours</p>
+        </div>
+        <div class="care-item">
+          <p class="care-label">☀️ Lumière</p>
+          <p class="care-value">Lumière vive indirecte</p>
+        </div>
+        <div class="care-item">
+          <p class="care-label">🌡️ Température</p>
+          <p class="care-value">18 – 24 °C</p>
+        </div>
+        <div class="care-item">
+          <p class="care-label">💦 Humidité</p>
+          <p class="care-value">Élevée, brumisations bienvenues</p>
+        </div>
+      </div>
+      <p class="plant-note">Arrosage en douche : inonder le substrat, laisser l'excès s'écouler entièrement avant de replacer.</p>
+      <div class="tags">
+        <span class="tag">Tropical</span>
+        <span class="tag">Feuillage persistant</span>
+        <span class="tag">Peut fleurir</span>
+      </div>
+    </div>
+
+    <!-- CALATHEA / MARANTA -->
+    <div class="plant-card card-calathea">
+      <p class="card-number">02 —</p>
+      <span class="plant-icon">🌿</span>
+      <h2 class="plant-common">Calathea / Maranta</h2>
+      <p class="plant-scientific">Calathea ornata · Maranta leuconeura</p>
+      <div class="divider"></div>
+      <div class="care-grid">
+        <div class="care-item">
+          <p class="care-label">💧 Arrosage</p>
+          <p class="care-value">Régulier, substrat légèrement humide</p>
+        </div>
+        <div class="care-item">
+          <p class="care-label">☀️ Lumière</p>
+          <p class="care-value">Lumière faible à moyenne, sans soleil direct</p>
+        </div>
+        <div class="care-item">
+          <p class="care-label">🌡️ Température</p>
+          <p class="care-value">18 – 27 °C</p>
+        </div>
+        <div class="care-item">
+          <p class="care-label">💦 Humidité</p>
+          <p class="care-value">Très élevée — éviter les courants d'air</p>
+        </div>
+      </div>
+      <p class="plant-note">Feuilles striées vert clair et vert foncé. La Maranta ferme ses feuilles la nuit (mouvement nyctinastatique).</p>
+      <div class="tags">
+        <span class="tag">Feuillage décoratif</span>
+        <span class="tag">Mi-ombre</span>
+        <span class="tag">Humidité haute</span>
+      </div>
+    </div>
+
+    <!-- STRELITZIA -->
+    <div class="plant-card card-strelitzia" style="grid-column: 1 / -1;">
+      <p class="card-number">03 —</p>
+      <span class="plant-icon">🌸</span>
+      <h2 class="plant-common">Oiseau de Paradis</h2>
+      <p class="plant-scientific">Strelitzia reginae / nicolai</p>
+      <div class="divider"></div>
+      <div class="care-grid">
+        <div class="care-item">
+          <p class="care-label">💧 Arrosage</p>
+          <p class="care-value">Modéré — laisser sécher entre deux arrosages</p>
+        </div>
+        <div class="care-item">
+          <p class="care-label">☀️ Lumière</p>
+          <p class="care-value">Plein soleil ou lumière très vive</p>
+        </div>
+        <div class="care-item">
+          <p class="care-label">🌡️ Température</p>
+          <p class="care-value">18 – 30 °C, tolère 10 °C min.</p>
+        </div>
+        <div class="care-item">
+          <p class="care-label">🌱 Fertilisation</p>
+          <p class="care-value">Printemps–été, tous les 15 jours</p>
+        </div>
+      </div>
+      <p class="plant-note">Grande plante architecturale à croissance lente. Peut fleurir (fleurs orange et bleues) si elle reçoit suffisamment de lumière directe.</p>
+      <div class="tags">
+        <span class="tag">Architectural</span>
+        <span class="tag">Plein soleil</span>
+        <span class="tag">Floraison spectaculaire</span>
+        <span class="tag">Grandes feuilles</span>
+      </div>
+    </div>
+
+  </div>
+
+  <footer>
+    <div>
+      <span class="footer-count">3</span>
+      <p style="margin-top:4px">plantes recensées</p>
+    </div>
+    <p>Herbier · Mis à jour en 2026</p>
+  </footer>
+
+</body>
+</html>
