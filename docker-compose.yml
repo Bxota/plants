@@ -23,12 +23,9 @@ services:
     depends_on:
       db:
         condition: service_healthy
+    env_file: .env
     environment:
       DATABASE_URL: postgresql+asyncpg://plantes:${DB_PASSWORD}@db:5432/plantes
-      SECRET_KEY: ${SECRET_KEY}
-      ADMIN_USERNAME: ${ADMIN_USERNAME}
-      ADMIN_PASSWORD_HASH: ${ADMIN_PASSWORD_HASH}
-      GEMINI_API_KEY: ${GEMINI_API_KEY}
       UPLOAD_DIR: /app/uploads
     volumes:
       - uploads:/app/uploads
