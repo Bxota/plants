@@ -36,7 +36,6 @@
         :key="plant.id"
         :plant="plant"
         :index="index"
-        :wide="plants.length % 2 !== 0 && index === plants.length - 1"
         @edit="openEdit(plant)"
         @delete="confirmDelete(plant)"
       />
