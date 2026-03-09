@@ -2,10 +2,11 @@ import logging
 from contextlib import asynccontextmanager
 from pathlib import Path
 
+import asyncpg
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
-from sqlalchemy import select, text
+from sqlalchemy import select
 
 from app.config import settings
 from app.database import AsyncSessionLocal
@@ -18,27 +19,26 @@ MIGRATIONS_DIR = Path(__file__).parent.parent / "migrations"
 
 async def run_migrations():
     """Applique les fichiers .sql du dossier migrations/ qui n'ont pas encore été joués."""
-    async with AsyncSessionLocal() as db:
-        await db.execute(text("""
+    # asyncpg gère nativement le SQL multi-instructions et le dollar-quoting PL/pgSQL
+    dsn = settings.database_url.replace("postgresql+asyncpg://", "postgresql://")
+    conn = await asyncpg.connect(dsn)
+    try:
+        await conn.execute("""
             CREATE TABLE IF NOT EXISTS schema_migrations (
                 filename TEXT PRIMARY KEY,
                 applied_at TIMESTAMPTZ NOT NULL DEFAULT now()
             )
-        """))
-        await db.commit()
-
-        applied = {row[0] for row in (await db.execute(text("SELECT filename FROM schema_migrations"))).fetchall()}
+        """)
+        applied = {row["filename"] for row in await conn.fetch("SELECT filename FROM schema_migrations")}
 
         for sql_file in sorted(MIGRATIONS_DIR.glob("*.sql")):
             if sql_file.name in applied:
                 continue
             logger.info("Migration : %s", sql_file.name)
-            for statement in sql_file.read_text().split(";"):
-                statement = statement.strip()
-                if statement:
-                    await db.execute(text(statement))
-            await db.execute(text("INSERT INTO schema_migrations (filename) VALUES (:f)"), {"f": sql_file.name})
-            await db.commit()
+            await conn.execute(sql_file.read_text())
+            await conn.execute("INSERT INTO schema_migrations (filename) VALUES ($1)", sql_file.name)
+    finally:
+        await conn.close()
 
 
 async def seed_admin():
