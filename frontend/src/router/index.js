@@ -8,6 +8,11 @@ const routes = [
     meta: { public: true },
   },
   {
+    path: '/invite/:token',
+    component: () => import('@/views/InviteView.vue'),
+    meta: { public: true },
+  },
+  {
     path: '/',
     component: () => import('@/views/HomeView.vue'),
     meta: { requiresAuth: true },

@@ -15,6 +15,14 @@ class Settings(BaseSettings):
     upload_dir: str = "/app/uploads"
     max_upload_bytes: int = 10 * 1024 * 1024  # 10 Mo
 
+    # SMTP (optionnel — si absent, les mails ne sont pas envoyés)
+    smtp_host: str = ""
+    smtp_port: int = 587
+    smtp_user: str = ""
+    smtp_password: str = ""
+    smtp_from: str = ""
+    app_base_url: str = "http://localhost:3000"
+
     class Config:
         env_file = ".env"
 

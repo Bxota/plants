@@ -2,7 +2,6 @@
   <div
     class="plant-card"
     :style="{ '--card-accent': accent.circle, '--card-bg': accent.bg }"
-    :class="{ 'card-wide': wide }"
   >
     <!-- Actions hover -->
     <div class="card-actions">
@@ -62,7 +61,6 @@ import { computed } from 'vue'
 const props = defineProps({
   plant: { type: Object, required: true },
   index: { type: Number, required: true },
-  wide: { type: Boolean, default: false },
 })
 
 defineEmits(['edit', 'delete'])
@@ -110,10 +108,6 @@ const accent = computed(() => ACCENTS[props.index % ACCENTS.length])
 
 .plant-card:hover {
   background: var(--card-bg, rgba(200, 223, 200, 0.12));
-}
-
-.card-wide {
-  grid-column: 1 / -1;
 }
 
 /* Actions */

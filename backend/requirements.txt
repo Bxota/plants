@@ -10,3 +10,4 @@ python-multipart>=0.0.9
 google-genai>=1.0
 Pillow>=10.3
 aiofiles>=23.2
+aiosmtplib>=3.0

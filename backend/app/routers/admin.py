@@ -1,3 +1,4 @@
+from datetime import datetime, timedelta, timezone
 from uuid import UUID
 
 from fastapi import APIRouter, Depends, HTTPException, status
@@ -8,7 +9,9 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.database import get_db
 from app.deps import get_admin_user
+from app.models.invitation import Invitation
 from app.models.user import User
+from app.services.email import send_invitation_email
 
 router = APIRouter(prefix="/api/admin", tags=["admin"])
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
@@ -72,4 +75,66 @@ async def delete_user(
         raise HTTPException(status_code=404, detail="Utilisateur introuvable")
 
     await db.delete(user)
+    await db.commit()
+
+
+# ── Invitations ────────────────────────────────────────────────────────────────
+
+
+class InvitationResponse(BaseModel):
+    id: UUID
+    token: UUID
+    created_at: datetime
+    expires_at: datetime | None
+    used_at: datetime | None
+    invited_email: str | None
+
+    model_config = {"from_attributes": True}
+
+
+class CreateInvitationRequest(BaseModel):
+    email: str | None = None
+
+
+@router.get("/invitations", response_model=list[InvitationResponse])
+async def list_invitations(
+    db: AsyncSession = Depends(get_db),
+    _=Depends(get_admin_user),
+):
+    result = await db.execute(select(Invitation).order_by(Invitation.created_at.desc()))
+    return result.scalars().all()
+
+
+@router.post("/invitations", response_model=InvitationResponse, status_code=status.HTTP_201_CREATED)
+async def create_invitation(
+    data: CreateInvitationRequest,
+    db: AsyncSession = Depends(get_db),
+    current_admin=Depends(get_admin_user),
+):
+    invitation = Invitation(
+        created_by_id=current_admin.id,
+        expires_at=datetime.now(timezone.utc) + timedelta(days=7),
+        invited_email=data.email or None,
+    )
+    db.add(invitation)
+    await db.commit()
+    await db.refresh(invitation)
+
+    if data.email:
+        await send_invitation_email(data.email, str(invitation.token))
+
+    return invitation
+
+
+@router.delete("/invitations/{token}", status_code=status.HTTP_204_NO_CONTENT)
+async def revoke_invitation(
+    token: UUID,
+    db: AsyncSession = Depends(get_db),
+    _=Depends(get_admin_user),
+):
+    result = await db.execute(select(Invitation).where(Invitation.token == token))
+    invitation = result.scalar_one_or_none()
+    if not invitation:
+        raise HTTPException(status_code=404, detail="Invitation introuvable")
+    await db.delete(invitation)
     await db.commit()

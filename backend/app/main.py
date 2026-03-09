@@ -7,7 +7,7 @@ from sqlalchemy import select
 
 from app.config import settings
 from app.database import AsyncSessionLocal
-from app.routers import auth, plants, photos, admin
+from app.routers import auth, plants, photos, admin, invite
 
 
 async def seed_admin():
@@ -48,6 +48,7 @@ app.include_router(auth.router)
 app.include_router(plants.router)
 app.include_router(photos.router)
 app.include_router(admin.router)
+app.include_router(invite.router)
 
 app.mount("/uploads", StaticFiles(directory=settings.upload_dir, check_dir=False), name="uploads")
 

@@ -36,34 +36,54 @@
 
       <div class="section-divider"></div>
 
-      <!-- Formulaire ajout -->
+      <!-- Invitations -->
       <section class="section">
-        <p class="section-label">Ajouter un utilisateur</p>
+        <p class="section-label">Invitations</p>
 
-        <form class="add-form" @submit.prevent="createUser">
-          <div class="form-row">
-            <div class="form-field">
-              <label>Identifiant</label>
-              <input v-model="newUser.username" type="text" placeholder="marie" required />
-            </div>
-            <div class="form-field">
-              <label>Mot de passe</label>
-              <input v-model="newUser.password" type="password" placeholder="••••••••" required />
-            </div>
+        <form class="invite-form" @submit.prevent="generateInvite">
+          <div class="invite-input-row">
+            <input
+              v-model="inviteEmail"
+              type="email"
+              placeholder="marie@exemple.com (optionnel)"
+            />
+            <button type="submit" class="btn btn-primary btn-sm" :disabled="generatingInvite">
+              {{ generatingInvite ? '…' : 'Envoyer' }}
+            </button>
           </div>
-          <div class="form-field checkbox-field">
-            <label class="checkbox-label">
-              <input v-model="newUser.is_admin" type="checkbox" />
-              <span>Rôle admin</span>
-            </label>
-          </div>
-
-          <p v-if="createError" class="form-error">{{ createError }}</p>
-
-          <button type="submit" class="btn btn-primary" :disabled="creating">
-            {{ creating ? 'Création…' : 'Créer le compte' }}
-          </button>
+          <p v-if="inviteError" class="form-error">{{ inviteError }}</p>
+          <p v-if="inviteSent" class="invite-sent">{{ inviteSent }}</p>
         </form>
+
+        <div v-if="invitations.length > 0" class="invites-list">
+          <div v-for="inv in invitations" :key="inv.id" class="invite-row">
+            <div class="invite-info">
+              <span v-if="inv.used_at" class="badge-used">utilisée</span>
+              <span v-else-if="isExpired(inv)" class="badge-expired">expirée</span>
+              <span v-else class="badge-active">active</span>
+              <span class="invite-target">{{ inv.invited_email || 'lien manuel' }}</span>
+              <span class="invite-date">{{ formatDate(inv.created_at) }}</span>
+            </div>
+            <div class="invite-actions">
+              <button
+                v-if="!inv.used_at && !isExpired(inv)"
+                class="btn btn-ghost btn-sm"
+                @click="copyInviteLink(inv.token)"
+              >
+                Copier
+              </button>
+              <button
+                class="btn btn-danger btn-sm"
+                :disabled="revoking === inv.token"
+                @click="revokeInvite(inv)"
+              >
+                {{ revoking === inv.token ? '…' : 'Supprimer' }}
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <p v-if="copiedToken" class="copy-confirm">Lien copié !</p>
       </section>
     </div>
   </div>
@@ -77,30 +97,22 @@ import { useAuthStore } from '@/stores/auth'
 const auth = useAuthStore()
 const users = ref([])
 const deleting = ref(null)
-const creating = ref(false)
-const createError = ref('')
+const invitations = ref([])
+const generatingInvite = ref(false)
+const revoking = ref(null)
+const copiedToken = ref(false)
+const inviteEmail = ref('')
+const inviteError = ref('')
+const inviteSent = ref('')
 
-const newUser = ref({ username: '', password: '', is_admin: false })
-
-onMounted(fetchUsers)
+onMounted(() => {
+  fetchUsers()
+  fetchInvitations()
+})
 
 async function fetchUsers() {
   const res = await client.get('/api/admin/users')
   users.value = res.data
-}
-
-async function createUser() {
-  creating.value = true
-  createError.value = ''
-  try {
-    await client.post('/api/admin/users', newUser.value)
-    newUser.value = { username: '', password: '', is_admin: false }
-    await fetchUsers()
-  } catch (e) {
-    createError.value = e.response?.data?.detail || 'Erreur lors de la création'
-  } finally {
-    creating.value = false
-  }
 }
 
 async function deleteUser(u) {
@@ -112,6 +124,55 @@ async function deleteUser(u) {
   } finally {
     deleting.value = null
   }
+}
+
+async function fetchInvitations() {
+  const res = await client.get('/api/admin/invitations')
+  invitations.value = res.data
+}
+
+async function generateInvite() {
+  inviteError.value = ''
+  inviteSent.value = ''
+  generatingInvite.value = true
+  try {
+    await client.post('/api/admin/invitations', { email: inviteEmail.value || null })
+    inviteSent.value = inviteEmail.value
+      ? `Invitation envoyée à ${inviteEmail.value}`
+      : 'Lien généré — copiez-le dans la liste ci-dessous'
+    inviteEmail.value = ''
+    await fetchInvitations()
+  } catch (e) {
+    inviteError.value = e.response?.data?.detail || "Erreur lors de l'envoi"
+  } finally {
+    generatingInvite.value = false
+  }
+}
+
+async function revokeInvite(inv) {
+  revoking.value = inv.token
+  try {
+    await client.delete(`/api/admin/invitations/${inv.token}`)
+    await fetchInvitations()
+  } finally {
+    revoking.value = null
+  }
+}
+
+function copyInviteLink(token) {
+  const url = `${window.location.origin}/invite/${token}`
+  navigator.clipboard.writeText(url)
+  copiedToken.value = true
+  setTimeout(() => (copiedToken.value = false), 2000)
+}
+
+function isExpired(inv) {
+  if (!inv.expires_at) return false
+  return new Date(inv.expires_at) < new Date()
+}
+
+function formatDate(dateStr) {
+  return new Date(dateStr).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short', year: 'numeric' })
 }
 </script>
 
@@ -250,22 +311,122 @@ input[type="password"] {
 }
 input:focus { border-color: var(--green-mid); }
 
-.checkbox-field { flex-direction: row; align-items: center; }
-.checkbox-label {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  cursor: pointer;
-  font-size: 12px;
-  color: var(--dark);
-  text-transform: none;
-  letter-spacing: 0;
-}
-.checkbox-label input { width: auto; }
-
 .form-error {
   font-size: 11px;
   color: var(--rust);
+}
+
+/* Invitations */
+.invite-form {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-bottom: 24px;
+}
+
+.invite-input-row {
+  display: flex;
+  gap: 10px;
+}
+
+.invite-input-row input {
+  flex: 1;
+  font-family: 'DM Mono', monospace;
+  font-size: 12px;
+  color: var(--dark);
+  background: var(--cream);
+  border: 1px solid var(--green-light);
+  border-radius: 4px;
+  padding: 10px 12px;
+  outline: none;
+  transition: border-color 0.2s;
+}
+.invite-input-row input:focus { border-color: var(--green-mid); }
+
+.invite-sent {
+  font-size: 11px;
+  color: var(--green-mid);
+}
+
+.empty-invites {
+  font-size: 12px;
+  color: var(--green-light);
+  padding: 20px 0;
+}
+
+.invites-list {
+  display: flex;
+  flex-direction: column;
+  border: 1px solid var(--green-light);
+}
+
+.invite-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 14px 20px;
+  border-bottom: 1px solid var(--green-pale);
+  gap: 12px;
+}
+.invite-row:last-child { border-bottom: none; }
+
+.invite-info {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.invite-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.badge-active {
+  font-size: 9px;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  padding: 3px 8px;
+  border: 1px solid var(--green-mid);
+  color: var(--green-mid);
+  border-radius: 100px;
+}
+
+.badge-used {
+  font-size: 9px;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  padding: 3px 8px;
+  border: 1px solid var(--green-light);
+  color: var(--green-light);
+  border-radius: 100px;
+}
+
+.badge-expired {
+  font-size: 9px;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  padding: 3px 8px;
+  border: 1px solid var(--rust);
+  color: var(--rust);
+  border-radius: 100px;
+}
+
+.invite-target {
+  font-size: 12px;
+  color: var(--dark);
+  font-family: 'DM Mono', monospace;
+}
+
+.invite-date {
+  font-size: 11px;
+  color: var(--green-mid);
+}
+
+.copy-confirm {
+  font-size: 11px;
+  color: var(--green-mid);
+  margin-top: 12px;
 }
 
 @media (max-width: 720px) {
