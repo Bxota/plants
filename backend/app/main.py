@@ -23,20 +23,27 @@ async def run_migrations():
     dsn = settings.database_url.replace("postgresql+asyncpg://", "postgresql://")
     conn = await asyncpg.connect(dsn)
     try:
-        await conn.execute("""
+        await conn.execute(
+            """
             CREATE TABLE IF NOT EXISTS schema_migrations (
                 filename TEXT PRIMARY KEY,
                 applied_at TIMESTAMPTZ NOT NULL DEFAULT now()
             )
-        """)
-        applied = {row["filename"] for row in await conn.fetch("SELECT filename FROM schema_migrations")}
+        """
+        )
+        applied = {
+            row["filename"]
+            for row in await conn.fetch("SELECT filename FROM schema_migrations")
+        }
 
         for sql_file in sorted(MIGRATIONS_DIR.glob("*.sql")):
             if sql_file.name in applied:
                 continue
             logger.info("Migration : %s", sql_file.name)
             await conn.execute(sql_file.read_text())
-            await conn.execute("INSERT INTO schema_migrations (filename) VALUES ($1)", sql_file.name)
+            await conn.execute(
+                "INSERT INTO schema_migrations (filename) VALUES ($1)", sql_file.name
+            )
     finally:
         await conn.close()
 
@@ -82,9 +89,13 @@ app.include_router(photos.router)
 app.include_router(admin.router)
 app.include_router(invite.router)
 
-app.mount("/uploads", StaticFiles(directory=settings.upload_dir, check_dir=False), name="uploads")
+app.mount(
+    "/uploads",
+    StaticFiles(directory=settings.upload_dir, check_dir=False),
+    name="uploads",
+)
 
 
-@app.get("/health")
+@app.get("/api/health")
 async def health():
     return {"status": "ok"}
