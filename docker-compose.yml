@@ -34,8 +34,10 @@ services:
       - "8000:8000"
     command: uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
     networks:
-      - default
-      - caddy_net
+      default:
+      caddy_net:
+        aliases:
+          - plantes_backend
 
   frontend:
     build: ./frontend
@@ -45,8 +47,10 @@ services:
     ports:
       - "3000:80"
     networks:
-      - default
-      - caddy_net
+      default:
+      caddy_net:
+        aliases:
+          - plants_frontend
 
 networks:
   caddy_net:
