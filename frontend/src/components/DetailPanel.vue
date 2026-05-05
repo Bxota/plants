@@ -29,6 +29,9 @@
 
         <!-- Body -->
         <div class="panel-body">
+          <div v-if="plant.photo_url" class="detail-photo-row">
+            <img :src="plant.photo_url" alt="Photo" class="detail-photo" />
+          </div>
           <p class="section-label">Besoins</p>
 
           <div v-for="m in METRICS" :key="m.key" class="metric-row">
@@ -232,6 +235,19 @@ function detailFor(key) {
   flex: 1;
 }
 
+/* Photo in detail */
+.detail-photo-row {
+  margin-bottom: 18px;
+}
+.detail-photo {
+  width: 100%;
+  aspect-ratio: 16 / 10;
+  height: auto;
+  object-fit: cover;
+  border-radius: 8px;
+  border: 1px solid var(--color-border);
+}
+
 .section-label {
   font-family: var(--font-label);
   font-size: 9px;
@@ -319,7 +335,13 @@ function detailFor(key) {
 }
 
 @media (max-width: 600px) {
-  .panel { max-width: 100%; }
+  .overlay { align-items: stretch; }
+  .panel { max-width: 100%; height: 100dvh; }
   .panel-header, .panel-body, .panel-footer { padding-left: 24px; padding-right: 24px; }
+  .plant-identity { align-items: center; }
+  .plant-emoji { font-size: 44px; }
+  .plant-common { font-size: 26px; }
+  .metric-row { grid-template-columns: 24px 1fr; }
+  .metric-row :deep(.level-meter) { grid-column: 1 / -1; }
 }
 </style>

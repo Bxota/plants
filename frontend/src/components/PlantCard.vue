@@ -33,6 +33,10 @@
       </span>
     </div>
 
+    <!-- Photo -->
+    <div v-if="plant.photo_url" class="card-photo-row">
+      <img :src="plant.photo_url" alt="Photo" class="plant-image" />
+    </div>
     <!-- Noms -->
     <div class="card-names">
       <h2 class="plant-common">{{ plant.common_name }}</h2>
@@ -254,5 +258,33 @@ const conditions = computed(() =>
   border: 1px solid var(--color-border);
   border-radius: 2px;
   color: var(--color-text-muted);
+}
+
+/* Photo */
+.card-photo-row {
+  width: 100%;
+}
+.plant-image {
+  width: 100%;
+  aspect-ratio: 16 / 10;
+  height: auto;
+  object-fit: cover;
+  border-radius: 8px;
+  border: 1px solid var(--color-border);
+}
+
+@media (max-width: 720px) {
+  .plant-card {
+    padding: 24px 20px 22px;
+    gap: 16px;
+  }
+
+  .plant-common {
+    font-size: 21px;
+  }
+
+  .card-actions {
+    opacity: 1;
+  }
 }
 </style>

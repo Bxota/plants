@@ -595,11 +595,18 @@ button:disabled {
 }
 
 @media (max-width: 600px) {
-  .panel { max-width: 100%; }
+  .overlay { align-items: stretch; }
+  .panel { max-width: 100%; height: 100dvh; }
   .panel-header, .panel-body, .panel-footer { padding-left: 20px; padding-right: 20px; }
   .form-row { grid-template-columns: 1fr; }
+  .header-top { gap: 12px; }
+  .panel-title { font-size: 24px; }
+  .current-photo-row { align-items: flex-start; }
+  .current-photo { width: 60px; height: 60px; }
   .level-row { grid-template-columns: 20px 1fr; grid-template-rows: auto auto; }
   .level-btns { grid-column: 1 / -1; }
   .level-val { display: none; }
+  .footer-actions { width: 100%; flex-direction: column; }
+  .footer-actions .btn { width: 100%; justify-content: center; }
 }
 </style>

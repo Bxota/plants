@@ -375,6 +375,11 @@ function logout() {
 
 @media (max-width: 720px) {
   .site-header   { padding: 48px 24px 28px; }
+  .header-right  { width: 100%; align-items: stretch; }
+  .view-toggle   { width: 100%; justify-content: space-between; }
+  .header-actions { width: 100%; flex-wrap: wrap; }
+  .header-actions .btn,
+  .header-actions .btn-ghost { flex: 1 1 auto; justify-content: center; }
   .plants-grid   { padding: 20px 16px; }
   .site-footer   { padding: 24px; }
   .list-header   { display: none; }
