@@ -20,7 +20,7 @@ jobs:
           script: |
             cd /opt/plantes
             git pull origin main
-            DOPPLER_TOKEN=$DOPPLER_TOKEN doppler run -- \
+            DOPPLER_TOKEN=$DOPPLER_TOKEN doppler run --project plants --config prd -- \
               docker compose -f docker-compose.yml -f docker-compose.prod.yml up -d --build
             docker image prune -f
         env:
