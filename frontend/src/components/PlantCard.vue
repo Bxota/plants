@@ -1,278 +1,258 @@
 <template>
   <div
     class="plant-card"
-    :style="{ '--card-accent': accent.circle, '--card-bg': accent.bg }"
+    :style="{ animationDelay: index * 0.06 + 's' }"
+    @mouseenter="hovered = true"
+    @mouseleave="hovered = false"
+    @click="$emit('select', plant)"
   >
+    <!-- Glow accent -->
+    <div class="card-glow" :class="{ expanded: hovered }" />
+
     <!-- Actions hover -->
     <div class="card-actions">
-      <button class="action-btn" title="Modifier" @click.stop="$emit('edit', plant)">✎</button>
-      <button class="action-btn action-btn--danger" title="Supprimer" @click.stop="$emit('delete', plant)">✕</button>
+      <button class="action-btn" title="Modifier" @click.stop="$emit('edit', plant)">
+        <Icon name="edit" :size="13" />
+      </button>
+      <button class="action-btn action-btn--danger" title="Supprimer" @click.stop="$emit('delete', plant)">
+        <Icon name="close" :size="13" />
+      </button>
     </div>
 
-    <p class="card-number">{{ String(index + 1).padStart(2, '0') }} —</p>
-
-    <!-- Photo ou emoji -->
-    <div class="plant-media">
-      <img v-if="plant.photo_url" :src="plant.photo_url" :alt="plant.common_name" class="plant-photo" />
-      <span v-else class="plant-icon">{{ plant.emoji || '🌿' }}</span>
+    <!-- Badge IA -->
+    <div v-if="plant.ai_identified" class="ai-badge">
+      <Icon name="sparkle" :size="11" />
+      <span>IA</span>
     </div>
 
-    <h2 class="plant-common">{{ plant.common_name }}</h2>
-    <p v-if="plant.scientific_name" class="plant-scientific">{{ plant.scientific_name }}</p>
-
-    <div class="divider"></div>
-
-    <div class="care-grid">
-      <div v-if="plant.watering" class="care-item">
-        <p class="care-label">💧 Arrosage</p>
-        <p class="care-value">{{ plant.watering }}</p>
-      </div>
-      <div v-if="plant.light" class="care-item">
-        <p class="care-label">☀️ Lumière</p>
-        <p class="care-value">{{ plant.light }}</p>
-      </div>
-      <div v-if="plant.temperature" class="care-item">
-        <p class="care-label">🌡️ Température</p>
-        <p class="care-value">{{ plant.temperature }}</p>
-      </div>
-      <div v-if="plant.humidity" class="care-item">
-        <p class="care-label">💦 Humidité</p>
-        <p class="care-value">{{ plant.humidity }}</p>
-      </div>
-      <div v-if="plant.fertilization" class="care-item">
-        <p class="care-label">🌱 Fertilisation</p>
-        <p class="care-value">{{ plant.fertilization }}</p>
-      </div>
+    <!-- Top : index + emoji -->
+    <div class="card-top">
+      <p class="card-num">{{ String(index + 1).padStart(2, '0') }}</p>
+      <span class="card-emoji" :class="{ rotated: hovered }">
+        {{ plant.emoji || '🌿' }}
+      </span>
     </div>
 
-    <p v-if="plant.notes" class="plant-note">{{ plant.notes }}</p>
+    <!-- Noms -->
+    <div class="card-names">
+      <h2 class="plant-common">{{ plant.common_name }}</h2>
+      <p v-if="plant.scientific_name" class="plant-scientific">{{ plant.scientific_name }}</p>
+    </div>
 
-    <div v-if="plant.tags?.length" class="tags">
+    <!-- Bandeau soins -->
+    <CareBand :plant="plant" :care-style="careStyle" />
+
+    <!-- Condition chips -->
+    <div v-if="conditionTags === 'on' && conditions.length" class="card-conditions">
+      <span v-for="c in conditions" :key="c.label" class="condition-chip">
+        <Icon :name="c.icon" :size="10" class="chip-icon" />
+        {{ c.label }}
+      </span>
+    </div>
+
+    <!-- Tags utilisateur -->
+    <div v-if="plant.tags?.length" class="card-tags">
       <span v-for="tag in plant.tags" :key="tag" class="tag">{{ tag }}</span>
     </div>
-
-    <span v-if="plant.ai_identified" class="ai-badge">✦ IA</span>
   </div>
 </template>
 
 <script setup>
-import { computed } from 'vue'
+import { ref, computed } from 'vue'
+import Icon from './Icon.vue'
+import CareBand from './CareBand.vue'
+import { effectiveLevels, deriveConditionTags } from '@/utils/levels.js'
 
 const props = defineProps({
-  plant: { type: Object, required: true },
-  index: { type: Number, required: true },
+  plant:         { type: Object,  required: true },
+  index:         { type: Number,  required: true },
+  careStyle:     { type: String,  default: 'bars' },
+  conditionTags: { type: String,  default: 'on' },
 })
 
-defineEmits(['edit', 'delete'])
+defineEmits(['edit', 'delete', 'select'])
 
-const ACCENTS = [
-  { circle: '#8ab89a', bg: 'rgba(138,184,154,0.08)' },
-  { circle: '#c8dfc8', bg: 'rgba(200,223,200,0.10)' },
-  { circle: '#c4923a', bg: 'rgba(196,146,58,0.07)' },
-  { circle: '#a05c2c', bg: 'rgba(160,92,44,0.06)' },
-  { circle: '#4a7c59', bg: 'rgba(74,124,89,0.08)' },
-]
+const hovered = ref(false)
 
-const accent = computed(() => ACCENTS[props.index % ACCENTS.length])
+const conditions = computed(() =>
+  deriveConditionTags(effectiveLevels(props.plant))
+)
 </script>
 
 <style scoped>
 .plant-card {
-  border-right: 1px solid var(--green-light);
-  border-bottom: 1px solid var(--green-light);
-  padding: 52px 48px;
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  padding: 32px 30px 28px;
   position: relative;
   overflow: hidden;
-  transition: background 0.4s ease;
-  animation: fadeUp 0.8s ease both;
-  cursor: default;
-}
-
-.plant-card::before {
-  content: '';
-  position: absolute;
-  bottom: -60px;
-  right: -60px;
-  width: 200px;
-  height: 200px;
-  border-radius: 50%;
-  background: var(--card-accent, var(--green-pale));
-  opacity: 0.25;
-  transition: transform 0.5s ease, opacity 0.5s ease;
-}
-
-.plant-card:hover::before {
-  transform: scale(1.4);
-  opacity: 0.4;
+  cursor: pointer;
+  transition: background 0.3s ease, border-color 0.3s ease;
+  animation: fadeUp 0.5s ease both;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
 }
 
 .plant-card:hover {
-  background: var(--card-bg, rgba(200, 223, 200, 0.12));
+  background: var(--color-surface-hover);
+  border-color: var(--color-border-strong);
+}
+
+/* Glow */
+.card-glow {
+  position: absolute;
+  bottom: -50px;
+  right: -50px;
+  width: 180px;
+  height: 180px;
+  border-radius: 50%;
+  background: var(--color-accent-glow);
+  transform: scale(1);
+  transition: transform 0.5s ease;
+  pointer-events: none;
+}
+.card-glow.expanded {
+  transform: scale(1.4);
 }
 
 /* Actions */
 .card-actions {
   position: absolute;
-  top: 20px;
-  right: 20px;
+  top: 14px;
+  left: 14px;
   display: flex;
-  gap: 8px;
+  gap: 6px;
   opacity: 0;
   transition: opacity 0.2s ease;
 }
-
 .plant-card:hover .card-actions {
   opacity: 1;
 }
 
 .action-btn {
-  width: 32px;
-  height: 32px;
+  width: 30px;
+  height: 30px;
   border-radius: 50%;
-  border: 1px solid var(--green-light);
-  background: var(--cream);
-  color: var(--green-mid);
+  border: 1px solid var(--color-border);
+  background: var(--color-surface);
+  color: var(--color-text-muted);
   cursor: pointer;
-  font-size: 14px;
   display: flex;
   align-items: center;
   justify-content: center;
   transition: all 0.2s ease;
 }
-
 .action-btn:hover {
-  background: var(--green-pale);
+  border-color: var(--color-border-strong);
+  color: var(--color-text);
 }
-
-.action-btn--danger {
-  color: var(--rust);
-  border-color: var(--rust);
-}
-
 .action-btn--danger:hover {
-  background: rgba(160, 92, 44, 0.1);
+  color: var(--color-warn);
+  border-color: var(--color-warn);
 }
 
-/* Media */
-.plant-media {
-  margin-bottom: 20px;
-}
-
-.plant-icon {
-  font-size: 52px;
-  display: block;
-  filter: drop-shadow(0 4px 8px rgba(0, 0, 0, 0.1));
-  transition: transform 0.3s ease;
-}
-
-.plant-card:hover .plant-icon {
-  transform: rotate(-5deg) scale(1.1);
-}
-
-.plant-photo {
-  width: 80px;
-  height: 80px;
-  object-fit: cover;
-  border-radius: 8px;
-  filter: drop-shadow(0 4px 8px rgba(0, 0, 0, 0.15));
-  transition: transform 0.3s ease;
-}
-
-.plant-card:hover .plant-photo {
-  transform: rotate(-2deg) scale(1.05);
-}
-
-/* Text */
-.card-number {
-  font-size: 11px;
-  letter-spacing: 0.2em;
-  color: var(--green-light);
-  margin-bottom: 28px;
-}
-
-.plant-common {
-  font-family: 'Playfair Display', serif;
-  font-size: 28px;
-  font-weight: 400;
-  color: var(--green-deep);
-  margin-bottom: 4px;
-  line-height: 1.2;
-}
-
-.plant-scientific {
-  font-size: 12px;
-  font-style: italic;
-  color: var(--ochre);
-  margin-bottom: 28px;
-  font-family: 'Playfair Display', serif;
-}
-
-.divider {
-  width: 40px;
-  height: 1px;
-  background: var(--green-light);
-  margin-bottom: 28px;
-}
-
-.care-grid {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 16px 24px;
-  margin-bottom: 28px;
-}
-
-.care-label {
-  font-size: 9px;
-  letter-spacing: 0.2em;
-  text-transform: uppercase;
-  color: var(--green-mid);
-  margin-bottom: 4px;
-}
-
-.care-value {
-  font-size: 12px;
-  color: var(--dark);
-  line-height: 1.5;
-}
-
-.plant-note {
-  font-size: 11px;
-  color: var(--green-mid);
-  line-height: 1.7;
-  border-left: 2px solid var(--green-pale);
-  padding-left: 14px;
-  font-style: italic;
-}
-
-.tags {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
-  margin-top: 24px;
-}
-
-.tag {
-  font-size: 9px;
-  letter-spacing: 0.15em;
-  text-transform: uppercase;
-  padding: 5px 12px;
-  border: 1px solid var(--green-light);
-  color: var(--green-mid);
-  border-radius: 100px;
-}
-
+/* Badge IA */
 .ai-badge {
   position: absolute;
-  bottom: 16px;
-  right: 20px;
-  font-size: 9px;
-  letter-spacing: 0.15em;
-  color: var(--ochre);
+  top: 14px;
+  right: 14px;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  color: var(--color-accent);
+  opacity: 0.7;
+  font-family: var(--font-label);
+  font-size: 8px;
+  letter-spacing: 0.2em;
+}
+
+/* Top */
+.card-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  position: relative;
+}
+
+.card-num {
+  font-family: var(--font-label);
+  font-size: 10px;
+  letter-spacing: 0.25em;
+  color: var(--color-accent);
   opacity: 0.6;
 }
 
-@media (max-width: 720px) {
-  .plant-card { padding: 40px 32px; border-right: none; }
-  .care-grid { grid-template-columns: 1fr; }
+.card-emoji {
+  font-size: 32px;
+  transition: transform 0.3s ease;
+  display: block;
+}
+.card-emoji.rotated {
+  transform: rotate(-8deg) scale(1.1);
+}
+
+/* Noms */
+.plant-common {
+  font-family: var(--font-display);
+  font-size: 24px;
+  font-weight: 700;
+  color: var(--color-text);
+  line-height: 1.1;
+  letter-spacing: -0.02em;
+  margin-bottom: 4px;
+}
+
+.plant-scientific {
+  font-family: var(--font-label);
+  font-style: italic;
+  font-size: 11px;
+  color: var(--color-text-muted);
+  letter-spacing: 0.02em;
+}
+
+/* Conditions */
+.card-conditions {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.condition-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 3px 8px;
+  border: 1px solid var(--color-border-strong);
+  border-radius: 100px;
+  background: var(--color-accent-dim);
+  font-family: var(--font-label);
+  font-size: 9px;
+  letter-spacing: 0.06em;
+  color: var(--color-accent);
+  text-transform: lowercase;
+}
+
+.chip-icon {
+  color: var(--color-accent);
+}
+
+/* Tags */
+.card-tags {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+  margin-top: auto;
+}
+
+.tag {
+  font-family: var(--font-label);
+  font-size: 9px;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  padding: 3px 9px;
+  border: 1px solid var(--color-border);
+  border-radius: 2px;
+  color: var(--color-text-muted);
 }
 </style>

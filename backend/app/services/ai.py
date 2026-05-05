@@ -27,10 +27,24 @@ USER_PROMPT = """Identifie cette plante et retourne EXACTEMENT ce JSON (aucun te
   "temperature": "Plage de température idéale, ex: 18 – 25 °C",
   "humidity": "Besoins en humidité, 1 phrase",
   "fertilization": "Rythme de fertilisation ou null si non pertinent",
+  "levels": {
+    "water": 3,
+    "light": 4,
+    "temp": 2,
+    "humidity": 4,
+    "fertilizer": 2
+  },
   "notes": "Note de soin importante ou particularité botanique, 1-2 phrases",
   "tags": ["tag1", "tag2", "tag3"],
   "confidence": "high"
 }
+
+Pour levels, utilise une échelle 1-5 (1 = besoin minimal, 5 = besoin maximal) :
+- water : fréquence d'arrosage (1=rarement, 5=très souvent)
+- light : intensité lumineuse requise (1=ombre, 5=plein soleil)
+- temp : préférence de chaleur (1=frais <15°C, 5=chaud >25°C)
+- humidity : humidité ambiante requise (1=air sec, 5=très humide)
+- fertilizer : besoin en engrais (1=jamais, 5=très fréquent)
 
 Pour les tags, utilise des termes comme : Tropical, Mi-ombre, Plein soleil, Humidité haute,
 Feuillage décoratif, Floraison, Architectural, Succulente, Cactus, Feuillage persistant,
@@ -88,6 +102,13 @@ async def identify_plant(image_bytes: bytes, media_type: str) -> dict:
     for field in ["common_name", "watering", "light", "temperature", "tags"]:
         if field not in data:
             data[field] = None if field != "tags" else []
+
+    # Validate levels structure ; reset to None if malformed so front can fallback
+    lvl = data.get("levels")
+    if not isinstance(lvl, dict) or not all(k in lvl for k in ("water", "light", "temp", "humidity", "fertilizer")):
+        data["levels"] = None
+    else:
+        data["levels"] = {k: max(1, min(5, int(lvl[k]))) for k in ("water", "light", "temp", "humidity", "fertilizer")}
 
     data["ai_raw_response"] = {"model": "gemini-2.5-flash", "raw": raw_text}
     return data

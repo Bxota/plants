@@ -1,0 +1,3 @@
+setup:
+  project: plants
+  config: dev

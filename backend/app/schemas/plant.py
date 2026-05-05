@@ -13,6 +13,7 @@ class PlantBase(BaseModel):
     temperature: str | None = None
     humidity: str | None = None
     fertilization: str | None = None
+    levels: dict | None = None  # {water,light,temp,humidity,fertilizer} 1-5 ; null = fallback côté front
     notes: str | None = None
     tags: list[str] = []
     sort_order: int = 0
@@ -45,6 +46,7 @@ class AiIdentifyResponse(BaseModel):
     temperature: str | None = None
     humidity: str | None = None
     fertilization: str | None = None
+    levels: dict | None = None  # {water,light,temp,humidity,fertilizer} 1-5
     notes: str | None = None
     tags: list[str] = []
     confidence: str = "medium"

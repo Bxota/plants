@@ -33,5 +33,7 @@ class Plant(Base):
 
     sort_order = Column(Integer, default=0)
 
+    levels = Column(JSONB, nullable=True)  # {water,light,temp,humidity,fertilizer} 1-5
+
     ai_identified = Column(Boolean, default=False)
     ai_raw_response = Column(JSONB, nullable=True)
