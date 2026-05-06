@@ -344,7 +344,7 @@ function detailFor(key) {
   .overlay { align-items: stretch; }
   .panel { max-width: 100%; height: 100dvh; }
   .panel-header, .panel-body, .panel-footer { padding-left: 24px; padding-right: 24px; }
-  .panel-header { padding-top: calc(36px + env(safe-area-inset-top)); }
+  .panel-header { padding-top: calc(36px + env(safe-area-inset-top)); top: env(safe-area-inset-top); }
   .panel-footer { padding-bottom: calc(20px + env(safe-area-inset-bottom)); }
   .plant-identity { align-items: center; }
   .plant-emoji { font-size: 44px; }
