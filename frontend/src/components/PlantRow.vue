@@ -1,9 +1,12 @@
 <template>
   <div class="plant-row" @click="$emit('select', plant)">
-    <!-- index + emoji -->
+    <!-- index + photo thumbnail OU emoji -->
     <div class="row-id">
       <span class="row-num">{{ String(index + 1).padStart(2, '0') }}</span>
-      <span class="row-emoji">{{ plant.emoji || '🌿' }}</span>
+      <div v-if="plant.photo_url" class="row-thumb">
+        <img :src="plant.photo_url" :alt="plant.common_name" />
+      </div>
+      <span v-else class="row-emoji">{{ plant.emoji || '🌿' }}</span>
     </div>
 
     <!-- Nom -->
@@ -88,6 +91,20 @@ const conditions = computed(() => deriveConditionTags(effectiveLevels(props.plan
 
 .row-emoji {
   font-size: 22px;
+}
+
+.row-thumb {
+  width: 32px;
+  height: 32px;
+  border-radius: 3px;
+  overflow: hidden;
+  border: 1px solid var(--color-border);
+  flex-shrink: 0;
+}
+.row-thumb img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
 }
 
 .row-common {

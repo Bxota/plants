@@ -114,6 +114,7 @@
       :care-style="theme.careStyle"
       @close="selectedPlant = null"
       @edit="openEdit(selectedPlant); selectedPlant = null"
+      @delete="confirmDelete(selectedPlant); selectedPlant = null"
     />
 
     <!-- Modal ajout/édition -->

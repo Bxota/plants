@@ -12,7 +12,10 @@
           </div>
 
           <div class="plant-identity">
-            <span class="plant-emoji">{{ plant.emoji || '🌿' }}</span>
+            <div v-if="plant.photo_url" class="identity-thumb">
+              <img :src="plant.photo_url" :alt="plant.common_name" />
+            </div>
+            <span v-else class="plant-emoji">{{ plant.emoji || '🌿' }}</span>
             <div>
               <h2 class="plant-common">{{ plant.common_name }}</h2>
               <p v-if="plant.scientific_name" class="plant-scientific">{{ plant.scientific_name }}</p>
@@ -29,9 +32,6 @@
 
         <!-- Body -->
         <div class="panel-body">
-          <div v-if="plant.photo_url" class="detail-photo-row">
-            <img :src="plant.photo_url" alt="Photo" class="detail-photo" />
-          </div>
           <p class="section-label">Besoins</p>
 
           <div v-for="m in METRICS" :key="m.key" class="metric-row">
@@ -60,7 +60,11 @@
 
         <!-- Footer sticky -->
         <div class="panel-footer">
-          <button class="btn btn-ghost" @click="$emit('edit', plant)">
+          <button class="btn btn-danger" @click="$emit('delete', plant)">
+            <Icon name="trash" :size="12" />
+            Supprimer
+          </button>
+          <button class="btn btn-primary" @click="$emit('edit', plant)">
             <Icon name="edit" :size="12" />
             Modifier
           </button>
@@ -81,7 +85,7 @@ const props = defineProps({
   careStyle: { type: String, default: 'bars' },
 })
 
-defineEmits(['close', 'edit'])
+defineEmits(['close', 'edit', 'delete'])
 
 const METRICS = [
   { key: 'water',      icon: 'water',      label: 'Arrosage' },
@@ -187,6 +191,20 @@ function detailFor(key) {
   line-height: 1;
 }
 
+.identity-thumb {
+  width: 88px;
+  height: 88px;
+  border-radius: 4px;
+  overflow: hidden;
+  border: 1px solid var(--color-border-strong);
+  flex-shrink: 0;
+}
+.identity-thumb img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
 .plant-common {
   font-family: var(--font-display);
   font-size: 30px;
@@ -233,19 +251,6 @@ function detailFor(key) {
 .panel-body {
   padding: 28px 36px;
   flex: 1;
-}
-
-/* Photo in detail */
-.detail-photo-row {
-  margin-bottom: 18px;
-}
-.detail-photo {
-  width: 100%;
-  aspect-ratio: 16 / 10;
-  height: auto;
-  object-fit: cover;
-  border-radius: 8px;
-  border: 1px solid var(--color-border);
 }
 
 .section-label {
@@ -329,6 +334,7 @@ function detailFor(key) {
   border-top: 1px solid var(--color-border);
   display: flex;
   justify-content: flex-end;
+  gap: 10px;
   position: sticky;
   bottom: 0;
   background: var(--color-surface);

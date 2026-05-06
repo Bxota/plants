@@ -71,54 +71,31 @@
 
           <div class="form-divider" />
 
-          <!-- Niveaux 1-5 -->
+          <!-- Besoins : slider 1-5 + texte de précision fusionnés -->
           <div class="form-section">
-            <p class="section-label">Niveaux de soin</p>
+            <p class="section-label">Besoins</p>
             <p class="section-hint">Remplis automatiquement par l'IA, ajustables manuellement.</p>
             <div class="levels-list">
               <div v-for="m in METRICS" :key="m.key" class="level-row">
                 <Icon :name="m.icon" :size="16" class="level-icon" />
                 <span class="level-label">{{ m.label }}</span>
-                <div class="level-btns">
-                  <button
-                    v-for="n in 5"
-                    :key="n"
-                    type="button"
-                    class="level-btn"
-                    :class="{ active: editLevels[m.key] >= n }"
-                    @click="setLevel(m.key, n)"
-                  />
-                </div>
-                <span class="level-val">{{ editLevels[m.key] }}/5</span>
-              </div>
-            </div>
-          </div>
-
-          <div class="form-divider" />
-
-          <!-- Soins textuels -->
-          <div class="form-section">
-            <p class="section-label">Détail des soins</p>
-            <div class="form-row">
-              <div class="form-field">
-                <label>Arrosage</label>
-                <input v-model="form.watering" type="text" placeholder="Tous les 15 jours…" />
-              </div>
-              <div class="form-field">
-                <label>Lumière</label>
-                <input v-model="form.light" type="text" placeholder="Lumière vive indirecte…" />
-              </div>
-              <div class="form-field">
-                <label>Température</label>
-                <input v-model="form.temperature" type="text" placeholder="18 – 24 °C" />
-              </div>
-              <div class="form-field">
-                <label>Humidité</label>
-                <input v-model="form.humidity" type="text" placeholder="Élevée…" />
-              </div>
-              <div class="form-field form-field--wide">
-                <label>Fertilisation</label>
-                <input v-model="form.fertilization" type="text" placeholder="Printemps–été, tous les 15 jours…" />
+                <input
+                  type="range"
+                  min="1"
+                  max="5"
+                  step="1"
+                  class="level-slider"
+                  :value="editLevels[m.key]"
+                  @input="setLevel(m.key, +$event.target.value)"
+                />
+                <LevelMeter :value="editLevels[m.key]" style="bars" class="level-meter-preview" />
+                <input
+                  type="text"
+                  class="level-detail"
+                  :placeholder="m.placeholder"
+                  :value="form[m.detailKey]"
+                  @input="form[m.detailKey] = $event.target.value"
+                />
               </div>
             </div>
           </div>
@@ -164,6 +141,7 @@ import { ref, watch, computed } from 'vue'
 import PhotoUpload from './PhotoUpload.vue'
 import TagInput from './TagInput.vue'
 import Icon from './Icon.vue'
+import LevelMeter from './LevelMeter.vue'
 import { usePlantsStore } from '@/stores/plants'
 
 const props = defineProps({
@@ -183,11 +161,11 @@ const photoUploadRef = ref(null)
 const EMOJIS = ['🌿', '🌱', '🌵', '🌴', '🌺', '🌸', '🌼', '🍃', '🎋', '🪴', '☕']
 
 const METRICS = [
-  { key: 'water',      icon: 'water',      label: 'Arrosage' },
-  { key: 'light',      icon: 'sun',        label: 'Lumière' },
-  { key: 'temp',       icon: 'temp',       label: 'Température' },
-  { key: 'humidity',   icon: 'humidity',   label: 'Humidité' },
-  { key: 'fertilizer', icon: 'fertilizer', label: 'Fertilisation' },
+  { key: 'water',      icon: 'water',      label: 'Arrosage',      detailKey: 'watering',       placeholder: 'Tous les 15 jours…' },
+  { key: 'light',      icon: 'sun',        label: 'Lumière',       detailKey: 'light',           placeholder: 'Lumière vive indirecte…' },
+  { key: 'temp',       icon: 'temp',       label: 'Température',   detailKey: 'temperature',     placeholder: '18 – 24 °C' },
+  { key: 'humidity',   icon: 'humidity',   label: 'Humidité',      detailKey: 'humidity',        placeholder: 'Élevée…' },
+  { key: 'fertilizer', icon: 'fertilizer', label: 'Fertilisation', detailKey: 'fertilization',   placeholder: 'Printemps–été, tous les 15j…' },
 ]
 
 const DEFAULT_LEVELS = { water: 3, light: 3, temp: 3, humidity: 3, fertilizer: 3 }
@@ -490,25 +468,28 @@ input::placeholder, textarea::placeholder {
   border-color: var(--color-border-strong);
 }
 
-/* ── Niveaux ── */
+/* ── Besoins (slider + texte) ── */
 .levels-list {
   display: flex;
   flex-direction: column;
-  gap: 10px;
 }
 
 .level-row {
   display: grid;
-  grid-template-columns: 20px 90px 1fr auto;
+  grid-template-columns: 22px 90px 1fr 60px;
+  grid-template-rows: auto auto;
   align-items: center;
-  gap: 12px;
-  padding: 10px 0;
+  column-gap: 12px;
+  row-gap: 8px;
+  padding: 12px 0;
   border-bottom: 1px solid var(--color-border);
 }
 
 .level-icon {
   color: var(--color-accent);
   opacity: 0.85;
+  grid-row: 1;
+  grid-column: 1;
 }
 
 .level-label {
@@ -517,39 +498,43 @@ input::placeholder, textarea::placeholder {
   letter-spacing: 0.15em;
   text-transform: uppercase;
   color: var(--color-text-muted);
+  grid-row: 1;
+  grid-column: 2;
 }
 
-.level-btns {
-  display: flex;
-  gap: 5px;
-}
-
-.level-btn {
-  width: 28px;
-  height: 6px;
-  border: none;
-  border-radius: 1px;
-  background: var(--color-text-dim);
-  opacity: 0.3;
+.level-slider {
+  grid-row: 1;
+  grid-column: 3;
+  width: 100%;
+  accent-color: var(--color-accent);
   cursor: pointer;
-  transition: background 0.15s, opacity 0.15s;
-  padding: 0;
-}
-.level-btn.active {
-  background: var(--color-accent);
-  opacity: 1;
-}
-.level-btn:hover {
-  opacity: 0.7;
 }
 
-.level-val {
+.level-meter-preview {
+  grid-row: 1;
+  grid-column: 4;
+  justify-self: end;
+}
+
+.level-detail {
+  grid-row: 2;
+  grid-column: 2 / -1;
   font-family: var(--font-label);
-  font-size: 10px;
-  letter-spacing: 0.1em;
-  color: var(--color-accent);
-  min-width: 28px;
-  text-align: right;
+  font-size: 12px;
+  color: var(--color-text);
+  background: var(--color-bg);
+  border: 1px solid var(--color-border);
+  border-radius: 2px;
+  padding: 7px 10px;
+  outline: none;
+  transition: border-color 0.2s;
+  width: 100%;
+}
+.level-detail:focus {
+  border-color: var(--color-accent);
+}
+.level-detail::placeholder {
+  color: var(--color-text-dim);
 }
 
 /* ── Photo ── */
@@ -603,9 +588,10 @@ button:disabled {
   .panel-title { font-size: 24px; }
   .current-photo-row { align-items: flex-start; }
   .current-photo { width: 60px; height: 60px; }
-  .level-row { grid-template-columns: 20px 1fr; grid-template-rows: auto auto; }
-  .level-btns { grid-column: 1 / -1; }
-  .level-val { display: none; }
+  .level-row { grid-template-columns: 22px 1fr; }
+  .level-slider { grid-column: 1 / -1; grid-row: 2; }
+  .level-meter-preview { display: none; }
+  .level-detail { grid-column: 1 / -1; grid-row: 3; }
   .footer-actions { width: 100%; flex-direction: column; }
   .footer-actions .btn { width: 100%; justify-content: center; }
 }

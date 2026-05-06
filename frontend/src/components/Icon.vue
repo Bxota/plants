@@ -86,6 +86,22 @@
       <circle cx="10" cy="10" r="3" />
       <path d="M10 1.5v2M10 16.5v2M1.5 10h2M16.5 10h2M4.4 4.4l1.4 1.4M14.2 14.2l1.4 1.4M15.6 4.4l-1.4 1.4M6.2 14.2l-1.4 1.4" stroke-width="2" />
     </template>
+    <template v-else-if="name === 'trash'">
+      <path d="M5 6 H15" />
+      <path d="M7 6 V4 H13 V6" />
+      <path d="M6 6 L7 16 H13 L14 6" />
+      <line x1="9" y1="9" x2="9" y2="14" opacity="0.5" />
+      <line x1="11" y1="9" x2="11" y2="14" opacity="0.5" />
+    </template>
+    <template v-else-if="name === 'image'">
+      <rect x="3" y="4" width="14" height="12" rx="1" />
+      <circle cx="7" cy="8" r="1.2" />
+      <path d="M3 14 L8 10 L13 14 L17 11" />
+    </template>
+    <template v-else-if="name === 'upload'">
+      <path d="M10 13 V3 M6 7 L10 3 L14 7" />
+      <path d="M3 14 V16 a 1 1 0 0 0 1 1 H16 a 1 1 0 0 0 1 -1 V14" />
+    </template>
   </svg>
 </template>
 

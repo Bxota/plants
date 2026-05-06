@@ -91,6 +91,18 @@ body::before {
 ::-webkit-scrollbar-track    { background: var(--color-bg); }
 ::-webkit-scrollbar-thumb    { background: var(--color-text-dim); border-radius: 2px; }
 
+/* ── Classes utilitaires responsive ─────────────────────────────────────── */
+@media (max-width: 760px) {
+  .header-row          { flex-direction: column !important; align-items: flex-start !important; gap: 24px !important; width: 100%; }
+  .header-actions      { width: 100% !important; align-items: flex-start !important; }
+  .responsive-grid     { grid-template-columns: 1fr !important; }
+  .responsive-list-row { grid-template-columns: 1fr !important; gap: 12px !important; }
+  .hide-mobile         { display: none !important; }
+  .form-row-2          { grid-template-columns: 1fr !important; }
+  .photo-row           { flex-direction: column !important; align-items: flex-start !important; }
+  .footer-row          { flex-direction: column !important; align-items: flex-start !important; gap: 12px !important; }
+}
+
 /* ── Boutons DA v2 ───────────────────────────────────────────────────────── */
 .btn {
   display: inline-flex;

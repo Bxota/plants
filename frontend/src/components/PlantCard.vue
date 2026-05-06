@@ -9,34 +9,23 @@
     <!-- Glow accent -->
     <div class="card-glow" :class="{ expanded: hovered }" />
 
-    <!-- Actions hover -->
-    <div class="card-actions">
-      <button class="action-btn" title="Modifier" @click.stop="$emit('edit', plant)">
-        <Icon name="edit" :size="13" />
-      </button>
-      <button class="action-btn action-btn--danger" title="Supprimer" @click.stop="$emit('delete', plant)">
-        <Icon name="close" :size="13" />
-      </button>
-    </div>
-
     <!-- Badge IA -->
     <div v-if="plant.ai_identified" class="ai-badge">
       <Icon name="sparkle" :size="11" />
       <span>IA</span>
     </div>
 
-    <!-- Top : index + emoji -->
+    <!-- Top : index + photo thumbnail OU emoji -->
     <div class="card-top">
       <p class="card-num">{{ String(index + 1).padStart(2, '0') }}</p>
-      <span class="card-emoji" :class="{ rotated: hovered }">
+      <div v-if="plant.photo_url" class="card-thumb" :class="{ rotated: hovered }">
+        <img :src="plant.photo_url" :alt="plant.common_name" />
+      </div>
+      <span v-else class="card-emoji" :class="{ rotated: hovered }">
         {{ plant.emoji || '🌿' }}
       </span>
     </div>
 
-    <!-- Photo -->
-    <div v-if="plant.photo_url" class="card-photo-row">
-      <img :src="plant.photo_url" alt="Photo" class="plant-image" />
-    </div>
     <!-- Noms -->
     <div class="card-names">
       <h2 class="plant-common">{{ plant.common_name }}</h2>
@@ -118,42 +107,6 @@ const conditions = computed(() =>
 }
 .card-glow.expanded {
   transform: scale(1.4);
-}
-
-/* Actions */
-.card-actions {
-  position: absolute;
-  top: 14px;
-  left: 14px;
-  display: flex;
-  gap: 6px;
-  opacity: 0;
-  transition: opacity 0.2s ease;
-}
-.plant-card:hover .card-actions {
-  opacity: 1;
-}
-
-.action-btn {
-  width: 30px;
-  height: 30px;
-  border-radius: 50%;
-  border: 1px solid var(--color-border);
-  background: var(--color-surface);
-  color: var(--color-text-muted);
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  transition: all 0.2s ease;
-}
-.action-btn:hover {
-  border-color: var(--color-border-strong);
-  color: var(--color-text);
-}
-.action-btn--danger:hover {
-  color: var(--color-warn);
-  border-color: var(--color-warn);
 }
 
 /* Badge IA */
@@ -260,17 +213,24 @@ const conditions = computed(() =>
   color: var(--color-text-muted);
 }
 
-/* Photo */
-.card-photo-row {
-  width: 100%;
+/* Photo thumbnail corner */
+.card-thumb {
+  width: 64px;
+  height: 64px;
+  border-radius: 4px;
+  overflow: hidden;
+  border: 1px solid var(--color-border-strong);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.25);
+  transition: transform 0.3s ease;
+  flex-shrink: 0;
 }
-.plant-image {
+.card-thumb img {
   width: 100%;
-  aspect-ratio: 16 / 10;
-  height: auto;
+  height: 100%;
   object-fit: cover;
-  border-radius: 8px;
-  border: 1px solid var(--color-border);
+}
+.card-thumb.rotated {
+  transform: rotate(-3deg) scale(1.06);
 }
 
 @media (max-width: 720px) {
