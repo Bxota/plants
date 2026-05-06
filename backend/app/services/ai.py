@@ -1,3 +1,4 @@
+import asyncio
 import json
 import logging
 
@@ -69,6 +70,18 @@ def _resize_image(image_bytes: bytes, max_dimension: int = 1600) -> bytes:
     return output.getvalue()
 
 
+MODELS_FALLBACK = ["gemini-2.5-flash", "gemini-3-flash"]
+
+
+def _call_model_sync(client: genai.Client, model: str, image_part: types.Part) -> str:
+    response = client.models.generate_content(
+        model=model,
+        contents=[USER_PROMPT, image_part],
+        config=types.GenerateContentConfig(system_instruction=SYSTEM_PROMPT),
+    )
+    return response.text
+
+
 async def identify_plant(image_bytes: bytes, media_type: str) -> dict:
     """Call Gemini Vision to identify a plant and return structured care info."""
     try:
@@ -79,14 +92,33 @@ async def identify_plant(image_bytes: bytes, media_type: str) -> dict:
 
     client = genai.Client(api_key=settings.gemini_api_key)
     image_part = types.Part.from_bytes(data=resized_bytes, mime_type="image/jpeg")
-    response = client.models.generate_content(
-        model="gemini-2.5-flash",
-        contents=[USER_PROMPT, image_part],
-        config=types.GenerateContentConfig(system_instruction=SYSTEM_PROMPT),
-    )
 
-    raw_text = response.text
-    logger.info(f"Gemini raw response: {raw_text[:200]}")
+    last_error: Exception | None = None
+    used_model = MODELS_FALLBACK[0]
+    raw_text: str | None = None
+    for model in MODELS_FALLBACK:
+        for attempt in range(2):
+            try:
+                raw_text = await asyncio.to_thread(
+                    _call_model_sync, client, model, image_part
+                )
+                used_model = model
+                logger.info(
+                    f"Gemini response via {model} (attempt {attempt + 1}): {raw_text[:200]}"
+                )
+                break
+            except Exception as e:
+                last_error = e
+                logger.warning(f"Model {model} attempt {attempt + 1} failed: {e}")
+                if attempt == 0:
+                    await asyncio.sleep(1)
+        else:
+            continue
+        break
+    else:
+        raise last_error
+
+    logger.info(f"Gemini raw response ({used_model}): {raw_text[:200]}")
 
     # Defensive JSON parse — strip any accidental markdown fences
     clean = raw_text.strip()
@@ -105,10 +137,15 @@ async def identify_plant(image_bytes: bytes, media_type: str) -> dict:
 
     # Validate levels structure ; reset to None if malformed so front can fallback
     lvl = data.get("levels")
-    if not isinstance(lvl, dict) or not all(k in lvl for k in ("water", "light", "temp", "humidity", "fertilizer")):
+    if not isinstance(lvl, dict) or not all(
+        k in lvl for k in ("water", "light", "temp", "humidity", "fertilizer")
+    ):
         data["levels"] = None
     else:
-        data["levels"] = {k: max(1, min(5, int(lvl[k]))) for k in ("water", "light", "temp", "humidity", "fertilizer")}
+        data["levels"] = {
+            k: max(1, min(5, int(lvl[k])))
+            for k in ("water", "light", "temp", "humidity", "fertilizer")
+        }
 
-    data["ai_raw_response"] = {"model": "gemini-2.5-flash", "raw": raw_text}
+    data["ai_raw_response"] = {"model": used_model, "raw": raw_text}
     return data
